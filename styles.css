@@ -69,6 +69,7 @@ body {
 
 .region-filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.6rem;
   justify-content: center;
 }
@@ -393,6 +394,137 @@ footer a { color: var(--accent-2); }
 }
 .download-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
 .download-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+
+.modal-actions { display: flex; gap: 0.6rem; }
+.modal-actions .download-btn { margin-top: 1.4rem; }
+
+.compare-btn-sm {
+  margin-top: 1.4rem;
+  padding: 0.85rem 1rem;
+  border: 2px solid var(--accent-2);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.15s;
+}
+.compare-btn-sm:hover { background: var(--accent-2); transform: translateY(-2px); }
+
+/* ---------- Botão e overlay de comparação ---------- */
+.compare-btn {
+  border: none;
+  cursor: pointer;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #c22e28, #6f35fc);
+  color: #fff;
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, filter 0.15s;
+}
+.compare-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+.compare-card { max-width: 620px; padding: 1.4rem 1.6rem 1.8rem; }
+.compare-title { text-align: center; margin-bottom: 1rem; font-size: 1.5rem; }
+
+.compare-selectors {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+.poke-select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  border: 2px solid var(--bg-card-hover);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.92rem;
+}
+.poke-select:focus { outline: none; border-color: var(--accent-2); }
+.vs-label { font-weight: 800; color: var(--accent); font-size: 1.1rem; }
+
+.cmp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+.cmp-poke { text-align: center; }
+.cmp-poke img { width: 120px; height: 120px; object-fit: contain; }
+.cmp-name { font-weight: 700; font-size: 1.05rem; }
+.cmp-types { display: flex; gap: 0.3rem; justify-content: center; margin-top: 0.35rem; flex-wrap: wrap; }
+
+.verdict {
+  text-align: center;
+  margin: 1rem 0;
+  padding: 0.8rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.verdict.v-a { box-shadow: inset 4px 0 0 #4caf50; }
+.verdict.v-b { box-shadow: inset -4px 0 0 #4caf50; }
+
+.matchup {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+.matchup-col h3 { font-size: 0.95rem; margin-bottom: 0.5rem; text-align: center; }
+.matchup-col h4 { font-size: 0.9rem; margin-bottom: 0.5rem; text-align: center; color: var(--text-dim); }
+
+.atk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 0.4rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+.atk-mult { font-weight: 800; font-size: 0.95rem; }
+.atk-row.m-good { background: rgba(76, 175, 80, 0.18); }
+.atk-row.m-good .atk-mult { color: #7be87f; }
+.atk-row.m-bad .atk-mult { color: #ff9a8b; }
+.atk-row.m-zero { background: rgba(120, 120, 120, 0.18); }
+.atk-row.m-zero .atk-mult { color: #aaa; }
+
+.def-title { text-align: center; margin: 1.1rem 0 0.7rem; font-size: 1rem; }
+.def-line { margin-bottom: 0.5rem; }
+.def-label {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.12rem 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+}
+.def-label.weak { background: rgba(194, 46, 40, 0.3); color: #ff9a8b; }
+.def-label.resist { background: rgba(76, 175, 80, 0.25); color: #7be87f; }
+.def-badges { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.mini-badge {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+.def-none { color: var(--text-dim); font-size: 0.85rem; }
+
+@media (max-width: 460px) {
+  .matchup, .cmp-grid { gap: 0.5rem; }
+  .compare-card { padding: 1.2rem 1rem 1.5rem; }
+}
 
 /* Cores por tipo */
 .t-normal   { background: #a8a77a; }

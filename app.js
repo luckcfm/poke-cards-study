@@ -219,12 +219,226 @@ function renderModalDetails(p, d) {
     </div>
     <h3 class="stats-title">Estatísticas base</h3>
     <div class="stats">${statsHTML}</div>
-    <button id="download-btn" class="download-btn">⬇ Baixar cartinha</button>`;
+    <div class="modal-actions">
+      <button id="download-btn" class="download-btn">⬇ Baixar cartinha</button>
+      <button id="compare-from-modal" class="compare-btn-sm" data-cmp-id="${p.id}">⚔️ Comparar este</button>
+    </div>`;
 
   currentDetail = { p, d };
 }
 
 // Abrir ao clicar / Enter em um card (delegação de evento).
+// ---------- Comparador de tipos ----------
+// Tabela de efetividade (geração VI+). Para cada tipo atacante, lista os
+// tipos defensores em que ele é super eficaz (2×), pouco eficaz (0.5×) ou
+// não causa dano (0×). O que não está listado é neutro (1×).
+const TYPE_CHART = {
+  normal:   { super: [], notVery: ["rock", "steel"], noEffect: ["ghost"] },
+  fire:     { super: ["grass", "ice", "bug", "steel"], notVery: ["fire", "water", "rock", "dragon"], noEffect: [] },
+  water:    { super: ["fire", "ground", "rock"], notVery: ["water", "grass", "dragon"], noEffect: [] },
+  electric: { super: ["water", "flying"], notVery: ["electric", "grass", "dragon"], noEffect: ["ground"] },
+  grass:    { super: ["water", "ground", "rock"], notVery: ["fire", "grass", "poison", "flying", "bug", "dragon", "steel"], noEffect: [] },
+  ice:      { super: ["grass", "ground", "flying", "dragon"], notVery: ["fire", "water", "ice", "steel"], noEffect: [] },
+  fighting: { super: ["normal", "ice", "rock", "dark", "steel"], notVery: ["poison", "flying", "psychic", "bug", "fairy"], noEffect: ["ghost"] },
+  poison:   { super: ["grass", "fairy"], notVery: ["poison", "ground", "rock", "ghost"], noEffect: ["steel"] },
+  ground:   { super: ["fire", "electric", "poison", "rock", "steel"], notVery: ["grass", "bug"], noEffect: ["flying"] },
+  flying:   { super: ["grass", "fighting", "bug"], notVery: ["electric", "rock", "steel"], noEffect: [] },
+  psychic:  { super: ["fighting", "poison"], notVery: ["psychic", "steel"], noEffect: ["dark"] },
+  bug:      { super: ["grass", "psychic", "dark"], notVery: ["fire", "fighting", "poison", "flying", "ghost", "steel", "fairy"], noEffect: [] },
+  rock:     { super: ["fire", "ice", "flying", "bug"], notVery: ["fighting", "ground", "steel"], noEffect: [] },
+  ghost:    { super: ["psychic", "ghost"], notVery: ["dark"], noEffect: ["normal"] },
+  dragon:   { super: ["dragon"], notVery: ["steel"], noEffect: ["fairy"] },
+  dark:     { super: ["psychic", "ghost"], notVery: ["fighting", "dark", "fairy"], noEffect: [] },
+  steel:    { super: ["ice", "rock", "fairy"], notVery: ["fire", "water", "electric", "steel"], noEffect: [] },
+  fairy:    { super: ["fighting", "dragon", "dark"], notVery: ["fire", "poison", "steel"], noEffect: [] },
+};
+
+const ALL_TYPES = Object.keys(TYPE_CHART);
+
+// Multiplicador de um tipo atacante contra UM tipo defensor.
+function effectiveness(attacker, defender) {
+  const c = TYPE_CHART[attacker];
+  if (c.noEffect.includes(defender)) return 0;
+  if (c.super.includes(defender)) return 2;
+  if (c.notVery.includes(defender)) return 0.5;
+  return 1;
+}
+
+// Multiplicador de um tipo atacante contra o(s) tipo(s) de um Pokémon.
+function multiplierVs(attacker, defenderTypes) {
+  return defenderTypes.reduce((m, t) => m * effectiveness(attacker, t), 1);
+}
+
+function fmtMult(m) {
+  if (m === 0) return "0×";
+  if (Number.isInteger(m)) return m + "×";
+  return m + "×"; // 0.25, 0.5
+}
+
+function multClass(m) {
+  if (m === 0) return "m-zero";
+  if (m > 1) return "m-good";
+  if (m < 1) return "m-bad";
+  return "m-neutral";
+}
+
+// Para o lado defensor: agrupa os 18 tipos por multiplicador recebido.
+function defensiveProfile(defenderTypes) {
+  const groups = {};
+  for (const atk of ALL_TYPES) {
+    const m = multiplierVs(atk, defenderTypes);
+    if (m === 1) continue;
+    (groups[m] = groups[m] || []).push(atk);
+  }
+  return groups;
+}
+
+const selA = document.getElementById("sel-a");
+const selB = document.getElementById("sel-b");
+const compareEl = document.getElementById("compare");
+const compareBody = document.getElementById("compare-body");
+
+// Popula os dois seletores com todos os Pokémon (ordenados por número).
+const sortedForSelect = [...POKEMON].sort((a, b) => a.id - b.id);
+function fillSelect(sel, selectedId) {
+  sel.innerHTML = sortedForSelect
+    .map(
+      (p) =>
+        `<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>Nº ${String(
+          p.id
+        ).padStart(3, "0")} — ${p.name}</option>`
+    )
+    .join("");
+}
+
+// Bloco de "X atacando Y": melhor multiplicador entre os tipos de X.
+function attackBlock(attacker, defender) {
+  const rows = attacker.types
+    .map((t) => {
+      const m = multiplierVs(t, defender.types);
+      return `<div class="atk-row ${multClass(m)}">
+        <span class="type-badge t-${t}">${TYPE_LABELS[t]}</span>
+        <span class="atk-mult">${fmtMult(m)}</span>
+      </div>`;
+    })
+    .join("");
+  const best = Math.max(...attacker.types.map((t) => multiplierVs(t, defender.types)));
+  return { html: rows, best };
+}
+
+// Lista de fraquezas/resistências defensivas.
+function defenseBlock(p) {
+  const groups = defensiveProfile(p.types);
+  const order = [4, 2, 0.5, 0.25, 0];
+  const labels = {
+    4: "Fraqueza ×4", 2: "Fraqueza ×2",
+    0.5: "Resiste ×½", 0.25: "Resiste ×¼", 0: "Imune",
+  };
+  const parts = order
+    .filter((k) => groups[k] && groups[k].length)
+    .map((k) => {
+      const badges = groups[k]
+        .map((t) => `<span class="mini-badge t-${t}">${TYPE_LABELS[t]}</span>`)
+        .join("");
+      return `<div class="def-line"><span class="def-label ${
+        k >= 2 ? "weak" : "resist"
+      }">${labels[k]}</span><span class="def-badges">${badges}</span></div>`;
+    })
+    .join("");
+  return parts || `<p class="def-none">Sem fraquezas ou resistências notáveis.</p>`;
+}
+
+function pokeHeader(p) {
+  const badges = p.types
+    .map((t) => `<span class="type-badge t-${t}">${TYPE_LABELS[t]}</span>`)
+    .join("");
+  return `
+    <div class="cmp-poke">
+      <img src="${SPRITE_BASE}${p.id}.png" alt="${p.name}" loading="lazy" onerror="this.style.opacity=.25" />
+      <div class="cmp-name">${p.name}</div>
+      <div class="cmp-types">${badges}</div>
+    </div>`;
+}
+
+function renderCompare() {
+  const a = POKEMON.find((p) => p.id === Number(selA.value));
+  const b = POKEMON.find((p) => p.id === Number(selB.value));
+  if (!a || !b) return;
+
+  const aAtk = attackBlock(a, b);
+  const bAtk = attackBlock(b, a);
+
+  let verdict, verdictClass;
+  if (aAtk.best > bAtk.best) {
+    verdict = `🏆 <strong>${a.name}</strong> leva vantagem ofensiva (${fmtMult(
+      aAtk.best
+    )} contra ${fmtMult(bAtk.best)})`;
+    verdictClass = "v-a";
+  } else if (bAtk.best > aAtk.best) {
+    verdict = `🏆 <strong>${b.name}</strong> leva vantagem ofensiva (${fmtMult(
+      bAtk.best
+    )} contra ${fmtMult(aAtk.best)})`;
+    verdictClass = "v-b";
+  } else {
+    verdict = `🤝 Confronto equilibrado — ambos causam no máximo ${fmtMult(aAtk.best)}`;
+    verdictClass = "v-tie";
+  }
+
+  compareBody.innerHTML = `
+    <div class="cmp-grid">
+      ${pokeHeader(a)}
+      ${pokeHeader(b)}
+    </div>
+
+    <div class="verdict ${verdictClass}">${verdict}</div>
+
+    <div class="matchup">
+      <div class="matchup-col">
+        <h3>${a.name} atacando</h3>
+        ${aAtk.html}
+      </div>
+      <div class="matchup-col">
+        <h3>${b.name} atacando</h3>
+        ${bAtk.html}
+      </div>
+    </div>
+
+    <h3 class="def-title">Fraquezas &amp; resistências</h3>
+    <div class="matchup">
+      <div class="matchup-col">
+        <h4>${a.name}</h4>
+        ${defenseBlock(a)}
+      </div>
+      <div class="matchup-col">
+        <h4>${b.name}</h4>
+        ${defenseBlock(b)}
+      </div>
+    </div>`;
+}
+
+function openCompare(idA, idB) {
+  fillSelect(selA, idA ?? sortedForSelect[0].id);
+  fillSelect(selB, idB ?? sortedForSelect[3].id);
+  compareEl.hidden = false;
+  document.body.style.overflow = "hidden";
+  renderCompare();
+}
+
+function closeCompare() {
+  compareEl.hidden = true;
+  document.body.style.overflow = "";
+}
+
+document.getElementById("open-compare").addEventListener("click", () => openCompare());
+selA.addEventListener("change", renderCompare);
+selB.addEventListener("change", renderCompare);
+compareEl.addEventListener("click", (e) => {
+  if (e.target.hasAttribute("data-close-compare")) closeCompare();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !compareEl.hidden) closeCompare();
+});
+
 grid.addEventListener("click", (e) => {
   const card = e.target.closest(".card");
   if (card) openModal(Number(card.dataset.id));
@@ -244,6 +458,13 @@ modal.addEventListener("click", (e) => {
 
 modalBody.addEventListener("click", (e) => {
   if (e.target.id === "download-btn") downloadCard();
+  if (e.target.id === "compare-from-modal") {
+    const id = Number(e.target.dataset.cmpId);
+    closeModal();
+    // Escolhe um segundo Pokémon diferente para já mostrar o confronto.
+    const other = sortedForSelect.find((p) => p.id !== id).id;
+    openCompare(id, other);
+  }
 });
 
 // ---------- Geração da cartinha (canvas) ----------
@@ -393,7 +614,7 @@ async function downloadCard() {
     ctx.textAlign = "left";
     ctx.fillText(`Região: ${REGION_LABELS[p.region]}`, 50, 790);
     ctx.textAlign = "right";
-    ctx.fillText("Pokédex Kanto & Johto", W - 50, 790);
+    ctx.fillText("Pokédex Nacional", W - 50, 790);
 
     // Download.
     const link = document.createElement("a");

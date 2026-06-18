@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pokédex de Johto</title>
+  <title>Pokédex Nacional</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="hero">
-    <h1>Pokédex de <span>Johto</span></h1>
-    <p>Os Pokémon das regiões de Kanto e Johto (Gerações I e II — Nº 1 a 251)</p>
+    <h1>Pokédex <span>Nacional</span></h1>
+    <p>Os 809 Pokémon de Kanto a Alola (Gerações I a VII — Nº 1 a 809)</p>
   </header>
 
   <div class="controls">
@@ -21,6 +21,7 @@
       autocomplete="off"
       aria-label="Buscar Pokémon"
     />
+    <button id="open-compare" class="compare-btn">⚔️ Comparar Pokémon</button>
     <div id="region-filters" class="region-filters" role="group" aria-label="Filtrar por região"></div>
     <div id="type-filters" class="type-filters" role="group" aria-label="Filtrar por tipo"></div>
   </div>
@@ -40,6 +41,20 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-name">
       <button class="modal-close" data-close aria-label="Fechar">&times;</button>
       <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="compare" class="modal" hidden>
+    <div class="modal-backdrop" data-close-compare></div>
+    <div class="modal-card compare-card" role="dialog" aria-modal="true" aria-label="Comparar Pokémon">
+      <button class="modal-close" data-close-compare aria-label="Fechar">&times;</button>
+      <h2 class="compare-title">⚔️ Comparar Pokémon</h2>
+      <div class="compare-selectors">
+        <select id="sel-a" class="poke-select" aria-label="Primeiro Pokémon"></select>
+        <span class="vs-label">VS</span>
+        <select id="sel-b" class="poke-select" aria-label="Segundo Pokémon"></select>
+      </div>
+      <div id="compare-body"></div>
     </div>
   </div>
 
