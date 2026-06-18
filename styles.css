@@ -144,7 +144,9 @@ body {
   overflow: hidden;
 }
 
+.card { cursor: pointer; }
 .card:hover { transform: translateY(-5px); background: var(--bg-card-hover); }
+.card:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 2px; }
 
 .card .num {
   position: absolute;
@@ -201,6 +203,196 @@ footer {
 }
 
 footer a { color: var(--accent-2); }
+
+/* ---------- Modal ---------- */
+.modal[hidden] { display: none; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(3px);
+}
+
+.modal-card {
+  position: relative;
+  background: var(--bg-card);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  padding: 0 1.6rem 1.6rem;
+  animation: pop 0.2s ease;
+}
+
+@keyframes pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.9rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+.modal-close:hover { background: rgba(0, 0, 0, 0.45); }
+
+.modal-head {
+  margin: 0 -1.6rem;
+  border-radius: 18px 18px 0 0;
+  padding: 1.4rem 0 0.6rem;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  background: linear-gradient(160deg, var(--bg-card-hover), var(--bg-card));
+}
+
+.modal-head img {
+  width: 170px;
+  height: 170px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4));
+}
+
+.modal-num {
+  position: absolute;
+  top: 0.8rem;
+  left: 1.2rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+#modal-name {
+  text-align: center;
+  margin-top: 0.6rem;
+  font-size: 1.7rem;
+}
+
+.modal-region {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.modal-types {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin: 0.7rem 0;
+}
+
+.modal-genus {
+  text-align: center;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.modal-flavor {
+  text-align: center;
+  color: var(--text-dim);
+  margin: 0.6rem 0 1rem;
+  font-size: 0.95rem;
+}
+
+.modal-loading {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 1.2rem;
+}
+
+.modal-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1.2rem;
+}
+
+.modal-facts > div {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+}
+.modal-facts > div:last-child { grid-column: 1 / -1; }
+
+.fact-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.fact-val { font-weight: 600; }
+
+.stats-title {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 78px 34px 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.stat-name { font-size: 0.8rem; color: var(--text-dim); }
+.stat-val { font-weight: 700; font-size: 0.85rem; text-align: right; }
+
+.stat-bar {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.download-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1.4rem;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #f0a500);
+  color: #3a2e00;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+.download-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.download-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
 
 /* Cores por tipo */
 .t-normal   { background: #a8a77a; }

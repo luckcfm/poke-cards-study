@@ -35,6 +35,14 @@
     <p>Dados e sprites de <a href="https://pokeapi.co" target="_blank" rel="noopener">PokeAPI</a>. Pokémon © Nintendo / Game Freak.</p>
   </footer>
 
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+      <button class="modal-close" data-close aria-label="Fechar">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
