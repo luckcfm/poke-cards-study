@@ -1,5 +1,5 @@
 const SPRITE_BASE =
-  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/";
+  "https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon/other/official-artwork/";
 
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
