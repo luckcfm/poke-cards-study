@@ -437,7 +437,7 @@ footer a { color: var(--accent-2); }
   gap: 0.6rem;
   margin-bottom: 1.2rem;
 }
-.poke-select {
+.poke-input {
   flex: 1;
   min-width: 0;
   padding: 0.6rem 0.7rem;
@@ -447,7 +447,14 @@ footer a { color: var(--accent-2); }
   color: var(--text);
   font-size: 0.92rem;
 }
-.poke-select:focus { outline: none; border-color: var(--accent-2); }
+.poke-input:focus { outline: none; border-color: var(--accent-2); }
+
+.cmp-hint {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 1.5rem 0.5rem;
+  font-size: 0.95rem;
+}
 .vs-label { font-weight: 800; color: var(--accent); font-size: 1.1rem; }
 
 .cmp-grid {
@@ -520,6 +527,45 @@ footer a { color: var(--accent-2); }
   text-transform: uppercase;
 }
 .def-none { color: var(--text-dim); font-size: 0.85rem; }
+
+/* Comparação de status base */
+.stat-cmp {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.5rem;
+  border-radius: 6px;
+}
+.stat-cmp:nth-child(odd) { background: rgba(255, 255, 255, 0.03); }
+.stat-cmp .sc-label { text-align: center; font-size: 0.78rem; color: var(--text-dim); }
+.sc-a { text-align: right; font-weight: 700; font-size: 0.92rem; }
+.sc-b { text-align: left; font-weight: 700; font-size: 0.92rem; }
+.sc-win { color: #7be87f; }
+.stat-cmp.head { background: none; }
+.stat-cmp.head span { font-weight: 800; font-size: 0.88rem; color: var(--text); text-align: center; }
+.stat-cmp.total {
+  margin-top: 0.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0;
+  background: none;
+}
+.stat-cmp.total .sc-a, .stat-cmp.total .sc-b { font-size: 1.1rem; }
+.stat-cmp.total .sc-label { font-weight: 700; color: var(--text); }
+
+.overall {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 1.05rem;
+  background: rgba(255, 203, 5, 0.12);
+  border: 1px solid rgba(255, 203, 5, 0.3);
+}
+.overall.v-a { box-shadow: inset 4px 0 0 #4caf50; }
+.overall.v-b { box-shadow: inset -4px 0 0 #4caf50; }
+.overall-factors { margin-top: 0.45rem; font-size: 0.82rem; color: var(--text-dim); }
+.overall-note { margin-top: 0.45rem; font-size: 0.85rem; color: var(--accent); }
 
 @media (max-width: 460px) {
   .matchup, .cmp-grid { gap: 0.5rem; }

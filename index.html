@@ -50,10 +50,13 @@
       <button class="modal-close" data-close-compare aria-label="Fechar">&times;</button>
       <h2 class="compare-title">⚔️ Comparar Pokémon</h2>
       <div class="compare-selectors">
-        <select id="sel-a" class="poke-select" aria-label="Primeiro Pokémon"></select>
+        <input id="sel-a" class="poke-input" list="poke-list" autocomplete="off"
+               placeholder="Digite ou escolha..." aria-label="Primeiro Pokémon" />
         <span class="vs-label">VS</span>
-        <select id="sel-b" class="poke-select" aria-label="Segundo Pokémon"></select>
+        <input id="sel-b" class="poke-input" list="poke-list" autocomplete="off"
+               placeholder="Digite ou escolha..." aria-label="Segundo Pokémon" />
       </div>
+      <datalist id="poke-list"></datalist>
       <div id="compare-body"></div>
     </div>
   </div>

@@ -143,10 +143,18 @@ function renderModalLoading(p) {
     <p class="modal-loading">Carregando detalhes...</p>`;
 }
 
+// Busca (ou reusa do cache) os detalhes de um Pokémon. Compartilhado entre
+// o modal de detalhes e o modo de comparação.
+async function getDetails(id) {
+  if (detailCache.has(id)) return detailCache.get(id);
+  const data = await fetchDetails(id);
+  detailCache.set(id, data);
+  return data;
+}
+
 async function loadDetails(p) {
   try {
-    const data = detailCache.get(p.id) || (await fetchDetails(p.id));
-    detailCache.set(p.id, data);
+    const data = await getDetails(p.id);
     // Garante que o usuário ainda está vendo este Pokémon.
     if (modal.hidden) return;
     renderModalDetails(p, data);
@@ -297,18 +305,28 @@ const selA = document.getElementById("sel-a");
 const selB = document.getElementById("sel-b");
 const compareEl = document.getElementById("compare");
 const compareBody = document.getElementById("compare-body");
+let compareToken = 0; // evita corrida quando a seleção muda durante o fetch
 
-// Popula os dois seletores com todos os Pokémon (ordenados por número).
+// Datalist compartilhada: digita o nome e o navegador sugere os Pokémon.
 const sortedForSelect = [...POKEMON].sort((a, b) => a.id - b.id);
-function fillSelect(sel, selectedId) {
-  sel.innerHTML = sortedForSelect
-    .map(
-      (p) =>
-        `<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>Nº ${String(
-          p.id
-        ).padStart(3, "0")} — ${p.name}</option>`
-    )
-    .join("");
+const pokeList = document.getElementById("poke-list");
+pokeList.innerHTML = sortedForSelect
+  .map(
+    (p) =>
+      `<option value="${p.name}">Nº ${String(p.id).padStart(3, "0")}</option>`
+  )
+  .join("");
+
+// Resolve o texto digitado (nome ou número) para um Pokémon.
+function resolvePokemon(text) {
+  const q = (text || "").trim().toLowerCase();
+  if (!q) return null;
+  if (/^\d+$/.test(q)) return POKEMON.find((p) => p.id === Number(q)) || null;
+  return (
+    POKEMON.find((p) => p.name.toLowerCase() === q) ||
+    POKEMON.find((p) => p.name.toLowerCase().startsWith(q)) ||
+    null
+  );
 }
 
 // Bloco de "X atacando Y": melhor multiplicador entre os tipos de X.
@@ -361,27 +379,27 @@ function pokeHeader(p) {
 }
 
 function renderCompare() {
-  const a = POKEMON.find((p) => p.id === Number(selA.value));
-  const b = POKEMON.find((p) => p.id === Number(selB.value));
-  if (!a || !b) return;
+  const a = resolvePokemon(selA.value);
+  const b = resolvePokemon(selB.value);
+  if (!a || !b) {
+    compareBody.innerHTML = `<p class="cmp-hint">Digite ou escolha dois Pokémon para ver o confronto.</p>`;
+    return;
+  }
 
   const aAtk = attackBlock(a, b);
   const bAtk = attackBlock(b, a);
+  const typeWinner = aAtk.best > bAtk.best ? "a" : bAtk.best > aAtk.best ? "b" : null;
 
-  let verdict, verdictClass;
-  if (aAtk.best > bAtk.best) {
-    verdict = `🏆 <strong>${a.name}</strong> leva vantagem ofensiva (${fmtMult(
-      aAtk.best
-    )} contra ${fmtMult(bAtk.best)})`;
-    verdictClass = "v-a";
-  } else if (bAtk.best > aAtk.best) {
-    verdict = `🏆 <strong>${b.name}</strong> leva vantagem ofensiva (${fmtMult(
-      bAtk.best
-    )} contra ${fmtMult(aAtk.best)})`;
-    verdictClass = "v-b";
+  let typeLine, typeClass;
+  if (typeWinner === "a") {
+    typeLine = `<strong>${a.name}</strong> bate mais forte (${fmtMult(aAtk.best)} contra ${fmtMult(bAtk.best)})`;
+    typeClass = "v-a";
+  } else if (typeWinner === "b") {
+    typeLine = `<strong>${b.name}</strong> bate mais forte (${fmtMult(bAtk.best)} contra ${fmtMult(aAtk.best)})`;
+    typeClass = "v-b";
   } else {
-    verdict = `🤝 Confronto equilibrado — ambos causam no máximo ${fmtMult(aAtk.best)}`;
-    verdictClass = "v-tie";
+    typeLine = `Equilibrado — ambos causam no máximo ${fmtMult(aAtk.best)}`;
+    typeClass = "v-tie";
   }
 
   compareBody.innerHTML = `
@@ -390,7 +408,8 @@ function renderCompare() {
       ${pokeHeader(b)}
     </div>
 
-    <div class="verdict ${verdictClass}">${verdict}</div>
+    <h3 class="def-title">Vantagem de tipo</h3>
+    <div class="verdict ${typeClass}">${typeLine}</div>
 
     <div class="matchup">
       <div class="matchup-col">
@@ -413,12 +432,99 @@ function renderCompare() {
         <h4>${b.name}</h4>
         ${defenseBlock(b)}
       </div>
+    </div>
+
+    <h3 class="def-title">Status base</h3>
+    <div id="cmp-stats"><p class="cmp-hint">Carregando status...</p></div>
+    <div id="cmp-overall"></div>`;
+
+  // Status são buscados na PokeAPI; renderiza de forma assíncrona.
+  const token = ++compareToken;
+  Promise.all([getDetails(a.id), getDetails(b.id)])
+    .then(([da, db]) => {
+      if (token !== compareToken || compareEl.hidden) return;
+      renderStatsComparison(a, b, da, db, typeWinner);
+    })
+    .catch(() => {
+      const el = document.getElementById("cmp-stats");
+      if (el)
+        el.innerHTML = `<p class="cmp-hint">Não foi possível carregar os status (verifique a conexão).</p>`;
+    });
+}
+
+const STAT_ORDER = ["hp", "attack", "defense", "special-attack", "special-defense", "speed"];
+
+function renderStatsComparison(a, b, da, db, typeWinner) {
+  const av = Object.fromEntries(da.stats.map((s) => [s.name, s.value]));
+  const bv = Object.fromEntries(db.stats.map((s) => [s.name, s.value]));
+
+  const rows = STAT_ORDER.map((k) => {
+    const x = av[k] ?? 0;
+    const y = bv[k] ?? 0;
+    return `<div class="stat-cmp">
+      <span class="sc-a ${x > y ? "sc-win" : ""}">${x}</span>
+      <span class="sc-label">${STAT_LABELS[k]}</span>
+      <span class="sc-b ${y > x ? "sc-win" : ""}">${y}</span>
+    </div>`;
+  }).join("");
+
+  const aTotal = STAT_ORDER.reduce((s, k) => s + (av[k] || 0), 0);
+  const bTotal = STAT_ORDER.reduce((s, k) => s + (bv[k] || 0), 0);
+  const bstWinner = aTotal > bTotal ? "a" : bTotal > aTotal ? "b" : null;
+
+  document.getElementById("cmp-stats").innerHTML = `
+    <div class="stat-cmp head"><span>${a.name}</span><span></span><span>${b.name}</span></div>
+    ${rows}
+    <div class="stat-cmp total">
+      <span class="sc-a ${aTotal > bTotal ? "sc-win" : ""}">${aTotal}</span>
+      <span class="sc-label">Total (BST)</span>
+      <span class="sc-b ${bTotal > aTotal ? "sc-win" : ""}">${bTotal}</span>
+    </div>`;
+
+  // Veredito geral: combina vantagem de tipo + status base.
+  let scoreA = 0, scoreB = 0;
+  if (typeWinner === "a") scoreA++;
+  else if (typeWinner === "b") scoreB++;
+  if (bstWinner === "a") scoreA++;
+  else if (bstWinner === "b") scoreB++;
+
+  const speedA = av.speed ?? 0;
+  const speedB = bv.speed ?? 0;
+  const faster = speedA > speedB ? a.name : speedB > speedA ? b.name : null;
+  const speedNote = faster
+    ? `<div class="overall-note">⚡ ${faster} ataca primeiro (mais veloz)</div>`
+    : "";
+
+  let overall, oClass;
+  if (scoreA > scoreB) {
+    overall = `🏆 <strong>${a.name}</strong> é o favorito`;
+    oClass = "v-a";
+  } else if (scoreB > scoreA) {
+    overall = `🏆 <strong>${b.name}</strong> é o favorito`;
+    oClass = "v-b";
+  } else {
+    overall = `🤝 Confronto parelho — cada um leva uma vantagem (tipo × status)`;
+    oClass = "v-tie";
+  }
+
+  const factors = `Tipo: ${
+    typeWinner === "a" ? a.name : typeWinner === "b" ? b.name : "empate"
+  } · Status: ${bstWinner === "a" ? a.name : bstWinner === "b" ? b.name : "empate"}`;
+
+  document.getElementById("cmp-overall").innerHTML = `
+    <h3 class="def-title">Veredito geral</h3>
+    <div class="overall ${oClass}">
+      ${overall}
+      <div class="overall-factors">${factors}</div>
+      ${speedNote}
     </div>`;
 }
 
 function openCompare(idA, idB) {
-  fillSelect(selA, idA ?? sortedForSelect[0].id);
-  fillSelect(selB, idB ?? sortedForSelect[3].id);
+  const a = POKEMON.find((p) => p.id === (idA ?? sortedForSelect[0].id));
+  const b = POKEMON.find((p) => p.id === (idB ?? sortedForSelect[3].id));
+  selA.value = a ? a.name : "";
+  selB.value = b ? b.name : "";
   compareEl.hidden = false;
   document.body.style.overflow = "hidden";
   renderCompare();
@@ -430,8 +536,15 @@ function closeCompare() {
 }
 
 document.getElementById("open-compare").addEventListener("click", () => openCompare());
-selA.addEventListener("change", renderCompare);
-selB.addEventListener("change", renderCompare);
+selA.addEventListener("input", renderCompare);
+selB.addEventListener("input", renderCompare);
+// Ao sair do campo, normaliza para o nome exato do Pokémon resolvido.
+function normalizeField(sel) {
+  const p = resolvePokemon(sel.value);
+  if (p) sel.value = p.name;
+}
+selA.addEventListener("change", () => normalizeField(selA));
+selB.addEventListener("change", () => normalizeField(selB));
 compareEl.addEventListener("click", (e) => {
   if (e.target.hasAttribute("data-close-compare")) closeCompare();
 });
