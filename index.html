@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokédex de Johto</title>
+  <link rel="preconnect" href="https://raw.githubusercontent.com" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="hero">
+    <h1>Pokédex de <span>Johto</span></h1>
+    <p>Todos os 100 Pokémon da região de Johto (Geração II — Nº 152 a 251)</p>
+  </header>
+
+  <div class="controls">
+    <input
+      type="search"
+      id="search"
+      placeholder="Buscar por nome ou número..."
+      autocomplete="off"
+      aria-label="Buscar Pokémon"
+    />
+    <div id="type-filters" class="type-filters" role="group" aria-label="Filtrar por tipo"></div>
+  </div>
+
+  <main>
+    <p id="count" class="count" aria-live="polite"></p>
+    <ul id="grid" class="grid"></ul>
+    <p id="empty" class="empty" hidden>Nenhum Pokémon encontrado.</p>
+  </main>
+
+  <footer>
+    <p>Dados e sprites de <a href="https://pokeapi.co" target="_blank" rel="noopener">PokeAPI</a>. Pokémon © Nintendo / Game Freak.</p>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
