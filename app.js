@@ -4,11 +4,30 @@ const SPRITE_BASE =
 const grid = document.getElementById("grid");
 const searchInput = document.getElementById("search");
 const filtersEl = document.getElementById("type-filters");
+const regionFiltersEl = document.getElementById("region-filters");
 const countEl = document.getElementById("count");
 const emptyEl = document.getElementById("empty");
 
 let activeType = null;
+let activeRegion = null;
 let query = "";
+
+// Botões de filtro por região.
+const regions = [...new Set(POKEMON.map((p) => p.region))];
+for (const region of regions) {
+  const btn = document.createElement("button");
+  btn.className = "region-pill";
+  btn.textContent = REGION_LABELS[region];
+  btn.dataset.region = region;
+  btn.addEventListener("click", () => {
+    activeRegion = activeRegion === region ? null : region;
+    [...regionFiltersEl.children].forEach((c) =>
+      c.classList.toggle("active", c.dataset.region === activeRegion)
+    );
+    render();
+  });
+  regionFiltersEl.appendChild(btn);
+}
 
 // Monta os botões de filtro a partir dos tipos presentes na lista.
 const typesPresent = [...new Set(POKEMON.flatMap((p) => p.types))].sort((a, b) =>
@@ -49,11 +68,12 @@ function render() {
   const q = query.trim().toLowerCase();
   const list = POKEMON.filter((p) => {
     const matchesType = !activeType || p.types.includes(activeType);
+    const matchesRegion = !activeRegion || p.region === activeRegion;
     const matchesQuery =
       !q ||
       p.name.toLowerCase().includes(q) ||
       String(p.id).includes(q);
-    return matchesType && matchesQuery;
+    return matchesType && matchesRegion && matchesQuery;
   });
 
   grid.innerHTML = list.map(cardHTML).join("");
